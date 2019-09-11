@@ -1,5 +1,7 @@
 package com.test.decompress.controller;
 
+import com.test.decompress.dao.InputDAO;
+import com.test.decompress.dao.ResultDAO;
 import com.test.decompress.services.DecompressService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -11,10 +13,12 @@ public class MainController {
     @Autowired
     DecompressService service;
 
-    @GetMapping(path = "/{input}")
+    @PostMapping(path = "/")
     @ResponseBody
-    String decompressWithSearching(@PathVariable String input){
-        return service.decompressWithSearching(input);
+    public ResultDAO decompressWithSearching(@RequestBody InputDAO input){
+        ResultDAO result = new ResultDAO();
+        result.setResult(service.decompressWithSearching(input.getInput()));
+        return result;
     }
 
 

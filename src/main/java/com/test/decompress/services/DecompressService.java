@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 
 @Service
@@ -17,47 +18,46 @@ public class DecompressService {
         if ((s == null) || (s.length() == 0)) {
             return s;
         }
-        for (int i = s.length() - 1; i >= 0; i--) {
-            if (Character.isDigit(s.charAt(i)) && s.charAt(i + 1) != '[') {
-                String part = s.substring(i + 1, i + 2);
-                String countStr = "";
-                int j = i;
-                for (; j >= 0 && Character.isDigit(s.charAt(j)); j--) {
-                    countStr = s.charAt(j) + countStr;
-                }
-                int count = Integer.parseInt(countStr);
-                String replacePart = repeat(part, count);
-                s = s.substring(0, j + 1) + replacePart + s.substring(i + 2);
-            }
-        }
-
-        int closing;
-        while ((closing = s.indexOf(']')) > -1) {
-            int opening = s.lastIndexOf('[', closing);
-            String what = s.substring(opening + 1, closing);
-            String countStr = "";
-            int numPartIndex = opening - 1;
-            while (numPartIndex >= 0 && Character.isDigit(s.charAt(numPartIndex))) {
-                countStr = s.charAt(numPartIndex) + countStr;
-                numPartIndex--;
-            }
-            int count = Integer.parseInt(countStr);
-            String replacePart = repeat(what, count);
-            s = s.substring(0, numPartIndex + 1) + replacePart + s.substring(closing + 1);
-        }
-
-        return s;
+        return recurDecompress(s, false);
     }
 
-    private String repeat(String what, int times) {
-        if ((times <= 0) || (what == null) || (what.length() == 0)) {
-            return "";
+
+    String recurDecompress(String input, boolean isRecur) {
+        String num = "";
+        String result = "";
+        String temp = "";
+        boolean inBracket = false;
+
+        for (int i = 0; i < input.length(); i++) {
+
+            if (Character.isDigit(input.charAt(i))) {
+                num += input.charAt(i);
+            } else if (input.charAt(i) == '[') {
+                inBracket = true;
+                temp = recurDecompress(input.substring(i + 1), true);
+                i = i + temp.length();
+                int n = 0;
+                if (num.length() > 0)
+                    n = Integer.parseInt(num);
+                String finalTemp = temp;
+                if (n > 0)
+                    result += IntStream.range(0, n).mapToObj(x -> finalTemp).collect(Collectors.joining(""));
+                else
+                    result += temp;
+
+                num = "";
+                isRecur = false;
+            } else if (input.charAt(i) == ']') {
+                if (isRecur)
+                    return input.substring(0, i);
+                else
+                    inBracket = false;
+            } else if (!inBracket) {
+                result += input.charAt(i);
+            }
         }
-        StringBuilder buffer = new StringBuilder(times * what.length());
-        for (int i = 0; i < times; i++) {
-            buffer.append(what);
-        }
-        return buffer.toString();
+        return result;
+
     }
 
 }
